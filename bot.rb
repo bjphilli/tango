@@ -51,6 +51,9 @@ class Db
     end
   end
 
+  def penis
+  end
+
   def update_streams
     while true
       begin
