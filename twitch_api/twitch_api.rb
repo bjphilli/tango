@@ -2,7 +2,7 @@ require 'net/http'
 require 'multi_json'
 require 'sqlite3'
 
-$db = SQLite3::Database.open 'streams.db'
+$db = SQLite3::Database.open '../data/streams.db'
 
 while true do
   begin
