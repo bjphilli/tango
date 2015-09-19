@@ -18,7 +18,9 @@ while true do
         game = k['channel']['game']
         title = k['channel']['status']
         viewers = k['viewers'].to_s
-        $db.execute("update stream set title = '#{title}', game = '#{game}', viewers = #{viewers}, status = 1 where username = '#{name}';")
+        ins = $db.prepare("update stream set title = ?, game = ?, viewers = ?, status = 1 where username = ?;")
+        ins.bind_params title, game, viewers, name
+        ins.execute()
       end
     end
   rescue Exception => e
