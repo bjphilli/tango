@@ -1,6 +1,7 @@
 require 'net/http'
 require 'multi_json'
 require 'sqlite3'
+require 'time'
 
 $db = SQLite3::Database.open 'data/streams.db'
 
@@ -24,7 +25,13 @@ while true do
       end
     end
   rescue Exception => e
-    puts e
+    log(e)
   end
   sleep(15)
+end
+
+def log(e)
+  f = File.open('log.txt', 'a')
+  f.puts("[#{Time.now.utc.iso8601}]  - #{e}")
+  f.close()
 end
