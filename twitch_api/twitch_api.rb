@@ -3,6 +3,12 @@ require 'multi_json'
 require 'sqlite3'
 require 'time'
 
+def log_exception(e)
+  f = File.open('error_log.txt', 'a')
+  f.puts("[#{Time.now.utc.iso8601}]  - #{e}")
+  f.close()
+end
+
 $db = SQLite3::Database.open 'data/streams.db'
 
 while true do
@@ -25,13 +31,7 @@ while true do
       end
     end
   rescue Exception => e
-    log(e)
+    log_exception(e)
   end
   sleep(15)
-end
-
-def log(e)
-  f = File.open('log.txt', 'a')
-  f.puts("[#{Time.now.utc.iso8601}]  - #{e}")
-  f.close()
 end
