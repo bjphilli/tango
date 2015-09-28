@@ -12,6 +12,13 @@ class Db
   def build_streams
     $live_streams = []
     new_streams = $db.execute("select * from stream where status = 1")
+    channel_streams = $db.execute("select irc_channel,stream_name from stream_channel")
+
+    $streams_hash = Hash.new {|h,k| h[k] = Array.new }
+    channel_streams.each do |channel_stream|
+      $streams_hash[channel_stream[0]].push(channel_stream[1])
+    end
+
     new_streams.each do |stream|
       class_stream = Stream.new(stream[0],stream[1],stream[2],stream[3])
       $live_streams.push(class_stream)
@@ -67,16 +74,31 @@ class Db
           if not live_stream.still_live
             live_stream.should_delete = true
           elsif live_stream.game_changed and not live_stream.title_changed
-            Channel("#tango").send("New Game - #{live_stream.to_string}")
+            hash.each do |key, array|
+              if array.include?(live_stream.name)
+                Channel("##{key}").send("New Game - #{live_stream.to_string}")
+              end
+            end
           elsif not live_stream.game_changed and live_stream.title_changed
-            Channel("#tango").send("New Title - #{live_stream.to_string}")
+            hash.each do |key, array|
+              if array.include?(live_stream.name)
+                Channel("##{key}").send("New Title - #{live_stream.to_string}")
+              end
+            end
           elsif live_stream.game_changed and live_stream.title_changed
-            Channel("#tango").send("New Title and Game - #{live_stream.to_string}")
+            hash.each do |key, array|
+              if array.include?(live_stream.name)
+                Channel("##{key}").send("New Title and Game - #{live_stream.to_string}")
+              end
+            end
           elsif live_stream.is_new_live
-            Channel("#tango").send("Now Live - #{live_stream.to_string}")
+            hash.each do |key, array|
+              if array.include?(live_stream.name)
+                Channel("##{key}").send("Now Live - #{live_stream.to_string}")
+              end
+            end
           end
         end
-
         $live_streams.delete_if { |x| x.should_delete}
         $live_streams = $live_streams.sort! {|a,b| a.name <=> b.name}
       rescue Exception => e
@@ -87,89 +109,113 @@ class Db
 
   def on_message(m)
     msg = m.params[1]
+    channel = m.channel.name[1..-1]
     if msg.index('.add') == 0
-      add_stream_to_db msg
+      add_stream_to_db(channel, msg)
     elsif msg.index('.remove') == 0
-      remove_stream_from_db msg
+      remove_stream_from_db(channel, msg)
     elsif msg.index('.live') == 0
-      show_live_streams
+      show_live_streams(channel)
     elsif msg.index('.list') == 0
-      list_streams
-    elsif msg.index('.update') == 0
-      update_streams
+      list_streams(channel)
+    elsif msg.index('.hash') == 0
+      Channel("#tango").send("#{$streams_hash}")
     end
   end
 
-  def add_stream_to_db(msg)
+  def add_stream_to_db(channel, msg)
     begin
       split_msg = msg.split(' ')
       if split_msg.length > 2
         return false
       end
       stream = split_msg[1]
-      if not is_in_db? stream
+      if not is_in_master_stream_list?(channel, stream)
         db_query = "insert into stream values (\'#{stream}\',\'\',\'\',0,0)"
         $db.execute(db_query)
-        Channel("#tango").send("#{stream} successfully added")
-      else
-        Channel("#tango").send("#{stream} is already on the list!")
       end
-    rescue
-      Channel("#tango").send("Error adding stream #{stream}. Try again foo.")
+      if not is_in_channel_stream?(channel, stream)
+        db_query = "insert into stream_channel values(\'#{stream}\',\'#{channel}\')"
+        $db.execute(db_query)
+        Channel("##{channel}").send("#{stream} successfully added to channel ##{channel}")
+        $streams_hash[channel].push(stream)
+      else
+        Channel("##{channel}").send("#{stream} is already on the list for this channel!")
+      end
+    rescue Exception => e
+      Channel("##{channel}").send("Error adding stream #{stream}. Exception: #{e}.")
     end
   end
 
-  def remove_stream_from_db(msg)
+  def remove_stream_from_db(channel, msg)
     begin
       split_msg = msg.split(' ')
       if split_msg.length > 2
         return false
       end
       stream = split_msg[1]
-      if is_in_db? stream
-        db_query = "delete from stream where username = '#{stream}';"
+      if is_in_channel_stream?(channel, stream)
+        db_query = "delete from stream_channel where stream_name = '#{stream}' and irc_channel = '#{channel}';"
         $db.execute(db_query)
-        Channel("#tango").send("#{stream} successfully removed")
+        Channel("##{channel}").send("#{stream} successfully removed from channel ##{channel}")
+        $streams_hash[channel].delete(stream)
       else
-        Channel("#tango").send("#{stream} is not in the list!")
+        Channel("##{channel}").send("#{stream} is not in the list for this channel!")
       end
     rescue Exception => e
-      Channel("#tango").send("Error removing #{stream}")
+      Channel("##{channel}").send("Error removing #{stream} #{e}")
     end
   end
 
-  def list_streams
+  def list_streams(channel)
     begin
-      all_streams = $db.execute("select username from stream order by username")
-      Channel("#tango").send("Listing all streams for channel #tango")
+      all_streams = $db.execute("select stream_name from stream_channel where irc_channel = '#{channel}' order by stream_name")
+      Channel("##{channel}").send("Listing all streams for channel ##{channel}")
       msg = ""
       all_streams.each do |stream|
         msg = msg + stream[0] + ","
       end
       puts msg
       msg = msg[0...-1]
-      Channel("#tango").send(msg)
+      Channel("##{channel}").send(msg)
     rescue Exception => e
-      Channel("#tango").send("Error listing streams. Try again foo.")
+      Channel("##{channel}").send("Error listing streams. Try again foo. #{e}")
     end
   end
 
-  def show_live_streams
+  def show_live_streams(channel)
     if $live_streams.size > 0
+      channel_streams = $streams_hash[channel]
+      stream_found = false
       $live_streams.each do |stream|
-        Channel("#tango").send("Currently live - #{stream.to_string}")
+        if(channel_streams.include?(stream.name))
+          Channel("##{channel}").send("Currently live - #{stream.to_string}")
+          stream_found = true
+        end
+      end
+      if not stream_found
+        Channel("##{channel}").send("(◞‸◟)")
       end
     else
-      Channel("#tango").send("(◞‸◟)")
+      Channel("##{channel}").send("(◞‸◟)")
     end
   end
 
-  def is_in_db?(username)
+  def is_in_master_stream_list?(channel, username)
     begin
       streams = $db.execute("select * from stream where username = '#{username}'")
       return (streams.length > 0)
     rescue Exception => e
-      Channel("#tango").send("Error (◞‸◟)")
+      Channel("##{channel}").send("Error (◞‸◟)")
+    end
+  end
+
+  def is_in_channel_stream?(channel,stream)
+    begin
+      channel_stream = $db.execute("select * from stream_channel where stream_name = '#{stream}' and irc_channel = '#{channel}'")
+      return (channel_stream.length > 0)
+    rescue Exception => e
+      Channel("##{channel}").send("Error (◞‸◟) #{e}")
     end
   end
 end

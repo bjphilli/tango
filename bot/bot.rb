@@ -8,7 +8,7 @@ require_relative 'ctrl_commands.rb'
 bot = Cinch::Bot.new do
   configure do |c|
     c.server = "irc.speedrunslive.com"
-    c.channels = ["#tango", "#gdqsubmissions"]
+    c.channels = ["#tango", "#testblues"]
     c.nicks = ["tango","tango3469"]
     c.realname = "tango"
     c.user = "tango"
