@@ -74,25 +74,25 @@ class Db
           if not live_stream.still_live
             live_stream.should_delete = true
           elsif live_stream.game_changed and not live_stream.title_changed
-            hash.each do |key, array|
+            $streams_hash.each do |key, array|
               if array.include?(live_stream.name)
                 Channel("##{key}").send("New Game - #{live_stream.to_string}")
               end
             end
           elsif not live_stream.game_changed and live_stream.title_changed
-            hash.each do |key, array|
+            $streams_hash.each do |key, array|
               if array.include?(live_stream.name)
                 Channel("##{key}").send("New Title - #{live_stream.to_string}")
               end
             end
           elsif live_stream.game_changed and live_stream.title_changed
-            hash.each do |key, array|
+            $streams_hash.each do |key, array|
               if array.include?(live_stream.name)
                 Channel("##{key}").send("New Title and Game - #{live_stream.to_string}")
               end
             end
           elsif live_stream.is_new_live
-            hash.each do |key, array|
+            $streams_hash.each do |key, array|
               if array.include?(live_stream.name)
                 Channel("##{key}").send("Now Live - #{live_stream.to_string}")
               end
@@ -102,6 +102,7 @@ class Db
         $live_streams.delete_if { |x| x.should_delete}
         $live_streams = $live_streams.sort! {|a,b| a.name <=> b.name}
       rescue Exception => e
+        Channel("#tango").send("#{e}")
       end
       sleep(15)
     end
