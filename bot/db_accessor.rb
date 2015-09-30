@@ -102,7 +102,7 @@ class Db
         $live_streams.delete_if { |x| x.should_delete}
         $live_streams = $live_streams.sort! {|a,b| a.name <=> b.name}
       rescue Exception => e
-        Channel("#tango").send("#{e}")
+        $logger.log(e)
       end
       sleep(15)
     end
@@ -119,8 +119,8 @@ class Db
       show_live_streams(channel)
     elsif msg.index('.list') == 0
       list_streams(channel)
-    elsif msg.index('.hash') == 0
-      Channel("#tango").send("#{$streams_hash}")
+    #elsif msg.index('.hash') == 0
+    #  Channel("#tango").send("#{$streams_hash}")
     end
   end
 
