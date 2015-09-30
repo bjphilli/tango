@@ -14,7 +14,7 @@ $db = SQLite3::Database.open 'data/streams.db'
 while true do
   begin
     streams = $db.execute('select username from stream').join(',')
-    uri = URI("https://api.twitch.tv/kraken/streams?channel=#{streams}")
+    uri = URI("https://api.twitch.tv/kraken/streams?channel=#{streams}&limit=100")
     response = Net::HTTP.get_response(uri)
     obj = MultiJson.load(response.body)
 

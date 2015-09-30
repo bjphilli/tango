@@ -4,6 +4,7 @@ require_relative 'db_accessor.rb'
 require_relative 'stream.rb'
 require_relative 'nick_serv.rb'
 require_relative 'ctrl_commands.rb'
+require_relative 'logger.rb'
 
 bot = Cinch::Bot.new do
   configure do |c|
@@ -16,6 +17,7 @@ bot = Cinch::Bot.new do
   end
 
   $db = SQLite3::Database.open 'data/streams.db'
+  $logger = Logger.new
 end
 
 bot.start

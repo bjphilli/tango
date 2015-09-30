@@ -144,7 +144,7 @@ class Db
         Channel("##{channel}").send("#{stream} is already on the list for this channel!")
       end
     rescue Exception => e
-      Channel("##{channel}").send("Error adding stream #{stream}. Exception: #{e}.")
+      $logger.log(e)
     end
   end
 
@@ -164,7 +164,7 @@ class Db
         Channel("##{channel}").send("#{stream} is not in the list for this channel!")
       end
     rescue Exception => e
-      Channel("##{channel}").send("Error removing #{stream} #{e}")
+      $logger.log(e)
     end
   end
 
@@ -180,7 +180,7 @@ class Db
       msg = msg[0...-1]
       Channel("##{channel}").send(msg)
     rescue Exception => e
-      Channel("##{channel}").send("Error listing streams. Try again foo. #{e}")
+      $logger.log(e)
     end
   end
 
@@ -207,7 +207,7 @@ class Db
       streams = $db.execute("select * from stream where username = '#{username}'")
       return (streams.length > 0)
     rescue Exception => e
-      Channel("##{channel}").send("Error (◞‸◟)")
+      $logger.log(e)
     end
   end
 
@@ -216,7 +216,7 @@ class Db
       channel_stream = $db.execute("select * from stream_channel where stream_name = '#{stream}' and irc_channel = '#{channel}'")
       return (channel_stream.length > 0)
     rescue Exception => e
-      Channel("##{channel}").send("Error (◞‸◟) #{e}")
+      $logger.log(e)
     end
   end
 end
