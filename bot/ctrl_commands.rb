@@ -18,7 +18,4 @@ class CtrlCommands
     m.user.nick == 'boshi_ta'
   end
 
-  def do_nothing
-    puts "do nothing"
-  end
 end
