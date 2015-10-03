@@ -18,6 +18,7 @@ while true do
     response = Net::HTTP.get_response(uri)
     obj = MultiJson.load(response.body)
 
+
     $db.execute("update stream set status = 0;")
     if obj['_total'] > 0
       obj['streams'].each do |k|
