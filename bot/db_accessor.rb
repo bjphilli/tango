@@ -5,33 +5,48 @@ class Db
   listen_to :connect, method: :on_connect
 
   def on_connect(m)
+    prepare_db_statements
     build_streams
     t2 = Thread.new(update_streams)
   end
 
   def build_streams
     $live_streams = []
-    new_streams = $db.execute("select * from stream where status = 1")
-    channel_streams = $db.execute("select irc_channel,stream_name from stream_channel")
-
+    new_streams = $pg.exec_prepared('select_live_streams', [])
+    channel_streams = $pg.exec_prepared('select_stream_channels', [])
     $streams_hash = Hash.new {|h,k| h[k] = Array.new }
     channel_streams.each do |channel_stream|
-      $streams_hash[channel_stream[0]].push(channel_stream[1])
+      $streams_hash[channel_stream['irc_channel']].push(channel_stream['stream_name'])
     end
 
     new_streams.each do |stream|
-      class_stream = Stream.new(stream[0],stream[1],stream[2],stream[3])
+      class_stream = Stream.new(stream['username'],stream['title'],stream['game'],stream['viewers'])
       $live_streams.push(class_stream)
     end
+
+    puts $live_streams[0].to_string
+  end
+
+  def prepare_db_statements
+    $pg.prepare('insert_stream', 'insert into stream(username,title,game,viewers,status) values ($1,$2,$3,$4,$5)')
+    $pg.prepare('insert_stream_channel', "insert into stream_channel values($1,$2)")
+
+    $pg.prepare('select_live_streams', "select * from stream where status = true")
+    $pg.prepare('select_stream_channels', "select irc_channel,stream_name from stream_channel")
+    $pg.prepare('select_all_streams', "select stream_name from stream_channel where irc_channel = $1 order by stream_name")
+    $pg.prepare('select_stream_by_username', "select * from stream where username = $1")
+    $pg.prepare('select_single_stream_channel', "select * from stream_channel where stream_name = $1 and irc_channel = $2")
+
+    $pg.prepare('delete_stream_channel', "delete from stream_channel where stream_name = $1 and irc_channel = $2")
   end
 
   def update_streams
     while true
       begin
-        updated_streams = $db.execute("select * from stream where status = 1")
+        updated_streams = $pg.exec_prepared('select_live_streams', [])
         updated_class_streams = Hash.new "no stream"
         updated_streams.each do |stream|
-          updated_class_streams[stream[0]] = Stream.new(stream[0],stream[1],stream[2],stream[3])
+          updated_class_streams[stream['username']] = Stream.new(stream['username'],stream['title'],stream['game'],stream['viewers'])
         end
 
         $live_streams.each do |live_stream|
@@ -120,8 +135,10 @@ class Db
       show_live_streams(channel)
     elsif msg.index('.list') == 0
       list_streams(channel)
-    #elsif msg.index('.hash') == 0
-    #  Channel("#tango").send("#{$streams_hash}")
+    elsif msg.index('.hash') == 0
+      Channel("#tango").send("#{$streams_hash}")
+    elsif msg.index('.bowl') == 0
+      Channel("#tango").send("#{$live_streams[0].to_string}")
     end
   end
 
@@ -133,12 +150,10 @@ class Db
       end
       stream = split_msg[1]
       if not is_in_master_stream_list?(channel, stream)
-        db_query = "insert into stream values (\'#{stream}\',\'\',\'\',0,0)"
-        $db.execute(db_query)
+        $pg.exec_prepared('insert_stream', [stream,'','',0,0])
       end
       if not is_in_channel_stream?(channel, stream)
-        db_query = "insert into stream_channel values(\'#{stream}\',\'#{channel}\')"
-        $db.execute(db_query)
+        $pg.exec_prepared('insert_stream_channel', [stream,channel])
         Channel("##{channel}").send("#{stream} successfully added to channel ##{channel}")
         $streams_hash[channel].push(stream)
       else
@@ -157,8 +172,7 @@ class Db
       end
       stream = split_msg[1]
       if is_in_channel_stream?(channel, stream)
-        db_query = "delete from stream_channel where stream_name = '#{stream}' and irc_channel = '#{channel}';"
-        $db.execute(db_query)
+        $pg.exec_prepared('delete_stream_channel', [stream,channel])
         Channel("##{channel}").send("#{stream} successfully removed from channel ##{channel}")
         $streams_hash[channel].delete(stream)
       else
@@ -171,11 +185,11 @@ class Db
 
   def list_streams(channel)
     begin
-      all_streams = $db.execute("select stream_name from stream_channel where irc_channel = '#{channel}' order by stream_name")
+      all_streams = $pg.exec_prepared('select_all_streams', [channel])
       Channel("##{channel}").send("Listing all streams for channel ##{channel}")
       msg = ""
       all_streams.each do |stream|
-        msg = msg + stream[0] + ","
+        msg = msg + stream['stream_name'] + ","
       end
       puts msg
       msg = msg[0...-1]
@@ -205,8 +219,8 @@ class Db
 
   def is_in_master_stream_list?(channel, username)
     begin
-      streams = $db.execute("select * from stream where username = '#{username}'")
-      return (streams.length > 0)
+      streams = $pg.exec_prepared('select_stream_by_username', [username])
+      return (streams.cmd_tuples > 0)
     rescue Exception => e
       $logger.log_exception(e)
     end
@@ -214,8 +228,9 @@ class Db
 
   def is_in_channel_stream?(channel,stream)
     begin
-      channel_stream = $db.execute("select * from stream_channel where stream_name = '#{stream}' and irc_channel = '#{channel}'")
-      return (channel_stream.length > 0)
+      channel_stream = $pg.exec_prepared('select_single_stream_channel', [stream,channel])
+      puts channel_stream
+      return (channel_stream.cmd_tuples > 0)
     rescue Exception => e
       $logger.log_exception(e)
     end

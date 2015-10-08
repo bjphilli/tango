@@ -1,5 +1,5 @@
 require 'cinch'
-require 'sqlite3'
+require 'pg'
 require_relative 'db_accessor.rb'
 require_relative 'stream.rb'
 require_relative 'nick_serv.rb'
@@ -16,7 +16,8 @@ bot = Cinch::Bot.new do
     c.plugins.plugins = [NickServ,Db,CtrlCommands]
   end
 
-  $db = SQLite3::Database.open 'data/streams.db'
+  $pg = PGconn.open(:dbname => 'tango')
+
   $logger = Logger.new
 end
 

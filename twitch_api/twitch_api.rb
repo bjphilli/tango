@@ -1,7 +1,7 @@
 require 'net/http'
 require 'multi_json'
-require 'sqlite3'
 require 'time'
+require 'pg'
 
 def log_exception(e)
   f = File.open('error_log.txt', 'a')
@@ -9,25 +9,31 @@ def log_exception(e)
   f.close()
 end
 
-$db = SQLite3::Database.open 'data/streams.db'
+$pg = PGconn.open(:dbname => 'tango')
+
+$pg.prepare('select_usernames', 'select username from stream')
+$pg.prepare('set_stream_status_false', 'update stream set status = false')
+$pg.prepare('update_streams', 'update stream set title = $1, game = $2, viewers = $3, status = $4 where username = $5')
 
 while true do
   begin
-    streams = $db.execute('select username from stream').join(',')
-    uri = URI("https://api.twitch.tv/kraken/streams?channel=#{streams}&limit=100")
+    streams = $pg.exec_prepared('select_usernames', [])
+    stream_string = ""
+    streams.each do |stream|
+      stream_string = stream_string + (stream['username'] + ',')
+    end
+    uri = URI("https://api.twitch.tv/kraken/streams?channel=#{stream_string}&limit=100")
     response = Net::HTTP.get_response(uri)
     obj = MultiJson.load(response.body)
 
-    $db.execute("update stream set status = 0;")
+    $pg.exec_prepared('set_stream_status_false', [])
     if obj['_total'] > 0
       obj['streams'].each do |k|
         name = k['channel']['name']
         game = k['channel']['game']
         title = k['channel']['status']
         viewers = k['viewers'].to_s
-        ins = $db.prepare("update stream set title = ?, game = ?, viewers = ?, status = 1 where username = ?;")
-        ins.bind_params title, game, viewers, name
-        ins.execute()
+        $pg.exec_prepared('update_streams', [title,game,viewers,true,name])
       end
     end
   rescue Exception => e

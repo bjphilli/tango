@@ -10,7 +10,6 @@ pg = PGconn.open(:dbname => 'tango')
 
 pg.prepare('insert_stream', 'insert into stream(username,title,game,viewers,status) values ($1,$2,$3,$4,$5)')
 new_streams.each do |stream|
-  #pg.exec("insert into stream(username,title,game,viewers,status) values ('#{stream[0]}','#{stream[1]}','#{stream[2]}',#{stream[3]},#{!stream[4].zero?})")
   pg.exec_prepared('insert_stream', [stream[0],stream[1],stream[2],stream[3],stream[4]])
 end
 
