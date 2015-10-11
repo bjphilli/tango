@@ -60,16 +60,16 @@ class GdqSubmissions
 
       submission_results.each do |sub|
         Channel("##{channel}").send(sub.to_s_found(1))
-        if sub.category2 != nil
+        if sub.category2 != nil && sub.category2 != ""
           Channel("##{channel}").send(sub.to_s_found(2))        
         end
-        if sub.category3 != nil
+        if sub.category3 != nil && sub.category3 != ""
           Channel("##{channel}").send(sub.to_s_found(3))
         end
-        if sub.category4 != nil
+        if sub.category4 != nil && sub.category4 != ""
           Channel("##{channel}").send(sub.to_s_found(4))
         end
-        if sub.category5 != nil
+        if sub.category5 != nil && sub.category5 != ""
           Channel("##{channel}").send(sub.to_s_found(5))
         end        
       end
@@ -89,16 +89,16 @@ class GdqSubmissions
 
       submission_results.each do |sub|
         Channel("##{channel}").send(sub.to_s_found(1))
-        if sub.category2 != nil
+        if sub.category2 != nil && sub.category2 != ""
           Channel("##{channel}").send(sub.to_s_found(2))        
         end
-        if sub.category3 != nil
+        if sub.category3 != nil && sub.category3 != ""
           Channel("##{channel}").send(sub.to_s_found(3))
         end
-        if sub.category4 != nil
+        if sub.category4 != nil && sub.category4 != ""
           Channel("##{channel}").send(sub.to_s_found(4))
         end
-        if sub.category5 != nil
+        if sub.category5 != nil && sub.category5 != ""
           Channel("##{channel}").send(sub.to_s_found(5))
         end
       end
@@ -122,16 +122,16 @@ class GdqSubmissions
           sub = Submission.new(value[0],value[1],value[2],value[3],value[4],value[5],value[6],value[7],value[8],value[9],value[10],value[11],value[12],value[13])
           if type == "all"
             Channel("##{channel}").send(sub.to_s_found(1))
-            if sub.category2 != nil
+            if sub.category2 != nil && sub.category2 != ""
               Channel("##{channel}").send(sub.to_s_found(2))        
             end
-            if sub.category3 != nil
+            if sub.category3 != nil && sub.category3 != ""
               Channel("##{channel}").send(sub.to_s_found(3))
             end
-            if sub.category4 != nil
+            if sub.category4 != nil && sub.category4 != ""
               Channel("##{channel}").send(sub.to_s_found(4))
             end
-            if sub.category5 != nil
+            if sub.category5 != nil && sub.category5 != ""
               Channel("##{channel}").send(sub.to_s_found(5))
             end
           else
@@ -238,16 +238,16 @@ class GdqSubmissions
 
     if submission.is_new_submission
       Channel("#tango").send(submission.to_s_new(1))
-      if submission.category2 != nil
+      if submission.category2 != nil && submission.category2 != ""
         Channel("#tango").send(submission.to_s_new(2))        
       end
-      if submission.category3 != nil
+      if submission.category3 != nil && submission.category3 != ""
         Channel("#tango").send(submission.to_s_new(3))
       end
-      if submission.category4 != nil
+      if submission.category4 != nil && submission.category4 != ""
         Channel("#tango").send(submission.to_s_new(4))
       end
-      if submission.category5 != nil
+      if submission.category5 != nil && submission.category5 != ""
         Channel("#tango").send(submission.to_s_new(5))
       end                  
     end
