@@ -137,8 +137,8 @@ class Db
       list_streams(channel)
     elsif msg.index('.hash') == 0
       Channel("#tango").send("#{$streams_hash}")
-    elsif msg.index('.bowl') == 0
-      Channel("#tango").send("#{$live_streams[0].to_string}")
+    elsif msg.index('.subs') == 0
+      Channel("#tango").send("#{$submissions}")
     end
   end
 
