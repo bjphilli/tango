@@ -156,61 +156,64 @@ class GdqSubmissions
 
   def update_submissions
     while true
-      new_submissions = []
-      result = $pg_sub.exec_prepared('select_all_submissions', []).values
-      result.each do |value|
-        new_submissions.push(Submission.new(value[0],value[1],value[2],value[3],value[4],value[5],value[6],value[7],value[8],value[9],value[10],value[11],value[12],value[13]))
-      end
+      begin
+        new_submissions = []
+        result = $pg_sub.exec_prepared('select_all_submissions', []).values
+        result.each do |value|
+          new_submissions.push(Submission.new(value[0],value[1],value[2],value[3],value[4],value[5],value[6],value[7],value[8],value[9],value[10],value[11],value[12],value[13]))
+        end
 
-      updated_submissions = []
+        updated_submissions = []
 
-      new_submissions.each do |new_submission|
-        idx = $submissions.find_index {|item| item.id == new_submission.id}
-        if idx == nil
-          new_submission.is_new_submission = true
-          updated_submissions.push(new_submission)
-          $submissions.push(new_submission)
-        else
-          old_submission = $submissions[idx]    
-          has_changed = false
-
-          if old_submission.status1 != new_submission.status1
-            new_submission.status1changed = true
-            has_changed = true
-          end
-
-          if old_submission.status2 != new_submission.status2
-            new_submission.status2changed = true
-            has_changed = true
-          end
-
-          if old_submission.status3 != new_submission.status3
-            new_submission.status3changed = true
-            has_changed = true
-          end
-
-          if old_submission.status4 != new_submission.status4
-            new_submission.status4changed = true
-            has_changed = true
-          end
-
-          if old_submission.status5 != new_submission.status5
-            new_submission.status5changed = true
-            has_changed = true
-          end
-
-          if has_changed
+        new_submissions.each do |new_submission|
+          idx = $submissions.find_index {|item| item.id == new_submission.id}
+          if idx == nil
+            new_submission.is_new_submission = true
             updated_submissions.push(new_submission)
-            $submissions.delete_at(idx)
             $submissions.push(new_submission)
+          else
+            old_submission = $submissions[idx]    
+            has_changed = false
+
+            if old_submission.status1 != new_submission.status1
+              new_submission.status1changed = true
+              has_changed = true
+            end
+
+            if old_submission.status2 != new_submission.status2
+              new_submission.status2changed = true
+              has_changed = true
+            end
+
+            if old_submission.status3 != new_submission.status3
+              new_submission.status3changed = true
+              has_changed = true
+            end
+
+            if old_submission.status4 != new_submission.status4
+              new_submission.status4changed = true
+              has_changed = true
+            end
+
+            if old_submission.status5 != new_submission.status5
+              new_submission.status5changed = true
+              has_changed = true
+            end
+
+            if has_changed
+              updated_submissions.push(new_submission)
+              $submissions.delete_at(idx)
+              $submissions.push(new_submission)
+            end
           end
         end
-      end
 
-      updated_submissions.each do |submission|
-        send_notifications(submission)
+        updated_submissions.each do |submission|
+          send_notifications(submission)
+        end
+      rescue Exception => e
+        $logger.log_exception(e)
       end
-
       sleep(15)
     end
   end
