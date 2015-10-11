@@ -13,7 +13,7 @@ class GdqSubmissions
   def on_message(m)
     msg = m.params[1]
     channel = m.channel.name[1..-1]
-    if msg.index('.find') == 0
+    if msg.index('.sub') == 0
       lookup_submission_by_id(channel, msg,'all')
     elsif msg.index('.des') == 0
       lookup_submission_by_id(channel,msg,'description')
@@ -27,8 +27,8 @@ class GdqSubmissions
   def prepare_submission_db_statements
     $pg_sub.prepare('select_all_submissions', 'select * from submission')
     $pg_sub.prepare('select_submission_by_id', 'select * from submission where id = $1')
-    $pg_sub.prepare('select_submission_by_runner', 'select * from submission where runner like $1')
-    $pg_sub.prepare('select_submission_by_game', 'select * from submission where game like $1')
+    $pg_sub.prepare('select_submission_by_runner', 'select * from submission where upper(runner) like $1')
+    $pg_sub.prepare('select_submission_by_game', 'select * from submission where upper(game) like $1')
   end
 
   def search_submissions(channel,msg)
@@ -51,7 +51,7 @@ class GdqSubmissions
       end
 
       runner_name = split_msg[2]
-      result = $pg_sub.exec_prepared('select_submission_by_runner', ['%' + runner_name + '%']).values
+      result = $pg_sub.exec_prepared('select_submission_by_runner', ['%' + runner_name.upcase + '%']).values
       submission_results = []
 
       result.each do |value|
@@ -80,7 +80,7 @@ class GdqSubmissions
       end
 
       game_name = split_msg[2]
-      result = $pg_sub.exec_prepared('select_submission_by_game', ['%' + game_name + '%']).values
+      result = $pg_sub.exec_prepared('select_submission_by_game', ['%' + game_name.upcase + '%']).values
       submission_results = []
 
       result.each do |value|
