@@ -11,7 +11,7 @@ require_relative 'submission.rb'
 bot = Cinch::Bot.new do
   configure do |c|
     c.server = "irc.speedrunslive.com"
-    c.channels = ["#tango", "#testblues"]
+    c.channels = ["#tango", "#testblues", '#gdqsubmissions']
     c.nicks = ["tango","tango3469"]
     c.realname = "tango"
     c.user = "tango"

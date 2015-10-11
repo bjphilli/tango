@@ -217,38 +217,38 @@ class GdqSubmissions
 
   def send_notifications(submission)
     if submission.status1changed
-      Channel("#tango").send(submission.to_s_decision(1))
+      Channel("#gdqsubmissions").send(submission.to_s_decision(1))
     end
 
     if submission.status2changed
-      Channel("#tango").send(submission.to_s_decision(2))
+      Channel("#gdqsubmissions").send(submission.to_s_decision(2))
     end
 
     if submission.status3changed
-      Channel("#tango").send(submission.to_s_decision(3))
+      Channel("#gdqsubmissions").send(submission.to_s_decision(3))
     end
 
     if submission.status4changed
-      Channel("#tango").send(submission.to_s_decision(4))
+      Channel("#gdqsubmissions").send(submission.to_s_decision(4))
     end
 
     if submission.status5changed
-      Channel("#tango").send(submission.to_s_decision(5))
+      Channel("#gdqsubmissions").send(submission.to_s_decision(5))
     end
 
     if submission.is_new_submission
-      Channel("#tango").send(submission.to_s_new(1))
+      Channel("#gdqsubmissions").send(submission.to_s_new(1))
       if submission.category2 != nil && submission.category2 != ""
-        Channel("#tango").send(submission.to_s_new(2))        
+        Channel("#gdqsubmissions").send(submission.to_s_new(2))        
       end
       if submission.category3 != nil && submission.category3 != ""
-        Channel("#tango").send(submission.to_s_new(3))
+        Channel("#gdqsubmissions").send(submission.to_s_new(3))
       end
       if submission.category4 != nil && submission.category4 != ""
-        Channel("#tango").send(submission.to_s_new(4))
+        Channel("#gdqsubmissions").send(submission.to_s_new(4))
       end
       if submission.category5 != nil && submission.category5 != ""
-        Channel("#tango").send(submission.to_s_new(5))
+        Channel("#gdqsubmissions").send(submission.to_s_new(5))
       end                  
     end
   end
